@@ -1,0 +1,13 @@
+--GRU--LESS_DATA--
+
+17344/17344 [==============================] - ETA: 0s - 
+loss: 23.1255 - 
+main_output_loss: 5.2896 - 
+emb_dot_soft_max_loss: 6.3001 - 
+emb_dot_soft_max_1_loss: 6.3161 - 
+weighted_sum_loss: 5.2197 - 
+main_output_sparse_top_k_categorical_accuracy: 0.3822 - 
+emb_dot_soft_max_sparse_top_k_categorical_accuracy: 0.3745 - 
+emb_dot_soft_max_1_sparse_top_k_categorical_accuracy: 0.3687 - 
+weighted_sum_sparse_top_k_categorical_accuracy: 0.3858 
+2023-11-14 00:41:53.305960: 

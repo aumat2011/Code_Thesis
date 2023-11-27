@@ -1,0 +1,23 @@
+--LSTM--LESS_DATA--
+
+Epoch 1: val_weighted_sum_sparse_top_k_categorical_accuracy improved from -inf to 0.49808, saving model to MLPx_fold0_v44.h5
+17344/17344 [==============================] - 460s 26ms/step - 
+loss: 23.5537 - 
+main_output_loss: 5.3611 - 
+emb_dot_soft_max_loss: 6.4451 - 
+emb_dot_soft_max_1_loss: 6.4495 - 
+weighted_sum_loss: 5.2981 - 
+main_output_sparse_top_k_categorical_accuracy: 0.3729 - 
+emb_dot_soft_max_sparse_top_k_categorical_accuracy: 0.3692 - 
+emb_dot_soft_max_1_sparse_top_k_categorical_accuracy: 0.3609 - 
+weighted_sum_sparse_top_k_categorical_accuracy: 0.3774 - 
+val_loss: 19.3840 - 
+val_main_output_loss: 4.4412 - 
+val_emb_dot_soft_max_loss: 5.2636 - 
+val_emb_dot_soft_max_1_loss: 5.2891 - 
+val_weighted_sum_loss: 4.3902 - 
+val_main_output_sparse_top_k_categorical_accuracy: 0.4917 - 
+val_emb_dot_soft_max_sparse_top_k_categorical_accuracy: 0.4850 - 
+val_emb_dot_soft_max_1_sparse_top_k_categorical_accuracy: 0.4812 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.4981 - 
+lr: 0.0010
