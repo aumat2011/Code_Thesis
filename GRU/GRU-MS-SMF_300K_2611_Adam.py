@@ -27,7 +27,7 @@
 import os, sys
 
 VER = 44
-os.environ["CUDA_VISIBLE_DEVICES"]="0" #Sistemde hangi gpu'nun çalışacağını belirler
+os.environ["CUDA_VISIBLE_DEVICES"]= "0" #Sistemde hangi gpu'nun çalışacağını belirler
 MAX_GPU_MEMORY_MB = 20000 #hafızayı aşmaması için ekledim 0410
 
 
