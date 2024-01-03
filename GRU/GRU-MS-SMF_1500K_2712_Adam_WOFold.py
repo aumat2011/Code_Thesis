@@ -28,16 +28,15 @@ import os, sys
 
 VER = 44
 os.environ["CUDA_VISIBLE_DEVICES"]="0" #Sistemde hangi gpu'nun çalışacağını belirler
-MAX_GPU_MEMORY_MB = 20000 #hafızayı aşmaması için ekledim 0410
+MAX_GPU_MEMORY_MB = 16000 #hafızayı aşmaması için ekledim 0410
 
 
 TRAIN_WITH_TEST = True
 # ONLY DO THIS MANY FOLDS
 #DO_FOLDS = 5 Daha kısa sürede dönmesi için 1'e çektim
-DO_FOLDS = 5
+DO_FOLDS = 1
 # MAKE SUBMISSION OR NOT
-#DO_TEST = True
-DO_TEST = False
+DO_TEST = True
 
 # %%
 import pandas as pd, numpy as np
@@ -106,7 +105,7 @@ def top4_metric( val, istest=0, pos=0 , target='city_id'):
 #%%time
 PATH = './'
 #raw = cudf.read_csv('../../00_Data/train_and_test_2.csv')
-raw = cudf.read_csv('00_Data/train_and_test_2 _300K.csv')
+raw = cudf.read_csv('00_Data/train_and_test_2.csv')
 print(raw.shape)
 
 # %%
@@ -265,7 +264,7 @@ cols
 # # GRU-MS-SMF 5 Fold Model
 
 # %%
-os.environ['TF_MEMORY_ALLOCATION'] = "0.7" # fraction of free memory
+os.environ['TF_MEMORY_ALLOCATION'] = "0.8" # fraction of free memory
 
 # %%
 import tensorflow as tf
@@ -273,11 +272,11 @@ tf.__version__
 
 # %%
 gpus = tf.config.list_physical_devices('GPU')
-gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafıza hatası almamak için ekledim 0410
+gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8) #hafıza hatası almamak için ekledim 0410
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*16)]
 )
 
 # %% [markdown]
@@ -492,7 +491,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_GRU_300K_Adam.txt')
+    aum = CustomCallback(filename='accuracy_logs13122023.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -502,6 +501,7 @@ for fold in range(5):
           validation_data = (valid[FEATURES].to_pandas(),valid[TARGET].to_pandas()),
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
+    
     del train, valid
     gc.collect()
 
@@ -695,7 +695,6 @@ test[COLS].head()
 if DO_TEST:
     test[COLS].to_csv('submission-MLPx-RNN_v%i.csv'%VER,index=False)
 
-print("BAŞARDINIZ") 
 #wandb.finish()
 
 
