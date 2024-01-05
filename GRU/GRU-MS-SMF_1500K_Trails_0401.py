@@ -502,7 +502,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs04012024.txt')
+    aum = CustomCallback(filename='accuracy_logs05012024.txt')
 
     model = build_model()
     model.fit(train[FEATURES].to_pandas(),train[TARGET].to_pandas(),
@@ -513,11 +513,23 @@ for fold in range(5):
 
     rng = [i for i in range(5)]
     y = [validation_scores[x] for x in rng]
-    plt.plot(rng, y,'-o'); 
-    plt.xlabel('epoch',size=14); plt.ylabel('Accuracy',size=14)
-    plt.title('Accuracy Schedule',size=16); 
-    plt.text(rng, f'{y}', ha='right', va='bottom')
+
+    fig, ax = plt.subplots()
+
+    ax.plot(rng, y, '-o')
+
+    plt.xticks(rng, [f'{val:.1f}' for val in rng])
+    
     plt.grid()
+    plt.xlabel('epoch', size=14)
+    plt.ylabel('Accuracy', size=14)
+    plt.title('Accuracy Schedule', size=16)
+    # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
+    
+    # Her bir veri noktasının üzerine tam değeri yazdırma
+    for i, txt in enumerate(y):
+        ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
+
     plt.show()
     #wandb.log({"Accuracy": validation_score[8]})
 

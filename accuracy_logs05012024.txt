@@ -1,0 +1,35 @@
+###################################################
+Epoch 1/5 - 
+Loss: 23.4822 - 
+weighted_sum_loss: 5.2944
+val_loss: 19.1919
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.4819
+###################################################
+###################################################
+Epoch 2/5 - 
+Loss: 17.5547 - 
+weighted_sum_loss: 3.8851
+val_loss: 18.9121
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.4980
+###################################################
+###################################################
+Epoch 3/5 - 
+Loss: 13.3864 - 
+weighted_sum_loss: 3.0144
+val_loss: 18.6564
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5099
+###################################################
+###################################################
+Epoch 4/5 - 
+Loss: 12.2985 - 
+weighted_sum_loss: 2.7855
+val_loss: 18.7010
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5115
+###################################################
+###################################################
+Epoch 5/5 - 
+Loss: 12.1921 - 
+weighted_sum_loss: 2.7619
+val_loss: 18.6992
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5111
+###################################################
