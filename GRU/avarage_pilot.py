@@ -3,7 +3,9 @@ import os, sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-rates = [0.5664, 0.5664, 0.5684, 0.5667, 0.5626]
+#rates = [0.5664, 0.5664, 0.5684, 0.5667, 0.5626] #OVERALL GRU SCORES - BEST FOR EACH FOLD   
+#rates = [0.5671, 0.5657, 0.5673, 0.5662, 0.5626] #OVERALL LSTM0901 SCORES - BEST FOR EACH FOLD
+rates = [0.5668, 0.5650, 0.5660, 0.5674, 0.5637] #OVERALL LSTM1001 SCORES - BEST FOR EACH FOLD  
 
 def lrfn(epoch):
     return rates[epoch]
@@ -32,6 +34,6 @@ plt.xticks(rng, [f'{val:.1f}' for val in rng])
 plt.grid()
 plt.xlabel('Epoch', size=14)
 plt.ylabel('Accuracy Rate', size=14)
-plt.title('Overall Success Rate', size=16)
+plt.title('Overall Success Rate LSTM', size=16)
 plt.legend()
 plt.show()
