@@ -28,15 +28,16 @@ import os, sys
 
 VER = 44
 os.environ["CUDA_VISIBLE_DEVICES"]="0" #Sistemde hangi gpu'nun çalışacağını belirler
-MAX_GPU_MEMORY_MB = 16000 #hafızayı aşmaması için ekledim 0410
+MAX_GPU_MEMORY_MB = 20000 #hafızayı aşmaması için ekledim 0410
 
 
 TRAIN_WITH_TEST = True
 # ONLY DO THIS MANY FOLDS
 #DO_FOLDS = 5 Daha kısa sürede dönmesi için 1'e çektim
-DO_FOLDS = 1
+DO_FOLDS = 5
 # MAKE SUBMISSION OR NOT
-DO_TEST = True
+#DO_TEST = True
+DO_TEST = False
 
 # %%
 import pandas as pd, numpy as np
@@ -105,7 +106,7 @@ def top4_metric( val, istest=0, pos=0 , target='city_id'):
 #%%time
 PATH = './'
 #raw = cudf.read_csv('../../00_Data/train_and_test_2.csv')
-raw = cudf.read_csv('00_Data/train_and_test_2.csv')
+raw = cudf.read_csv('00_Data/train_and_test_2_1M.csv')
 print(raw.shape)
 
 # %%
@@ -264,7 +265,7 @@ cols
 # # GRU-MS-SMF 5 Fold Model
 
 # %%
-os.environ['TF_MEMORY_ALLOCATION'] = "0.8" # fraction of free memory
+os.environ['TF_MEMORY_ALLOCATION'] = "0.7" # fraction of free memory
 
 # %%
 import tensorflow as tf
@@ -272,11 +273,11 @@ tf.__version__
 
 # %%
 gpus = tf.config.list_physical_devices('GPU')
-gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8) #hafıza hatası almamak için ekledim 0410
+gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafıza hatası almamak için ekledim 0410
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*16)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
 )
 
 # %% [markdown]
@@ -363,46 +364,49 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         return prob
     
 
-def build_model():
+def build_model(dropout_rate=0.5, l2_reg_alpha=0.01):
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
-    i,j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i,j)
+    i, j = emb_map['city_id_lag1']
+    e_city = tf.keras.layers.Embedding(i, j)
     city_embs = []
-    
-    for k,f in enumerate(FEATURES):
-        i,j = emb_map[f]
+
+    for k, f in enumerate(FEATURES):
+        i, j = emb_map[f]
         if f.startswith('city_id'):
-            city_embs.append(e_city(inp[:,k]))
+            city_embs.append(e_city(inp[:, k]))
         else:
-            e = tf.keras.layers.Embedding(i,j)
-            embs.append(e(inp[:,k]))
-    
-    xc = tf.stack(city_embs, axis=1) # B, T, F
+            e = tf.keras.layers.Embedding(i, j)
+            embs.append(e(inp[:, k]))
+
+    xc = tf.stack(city_embs, axis=1)  # B, T, F
     xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
-    #xc, state_h, state_c = tf.keras.layers.LSTM(EC, activation='tanh', return_state=True)(xc)
-    
+
     x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x,xc])
-    
-    x1 = Linear(512+256, 'relu')(x)
-    x2 = Linear(512+256, 'relu')(x1)
-    prob = tf.keras.layers.Dense(t_ct,activation='softmax',name='main_output')(x2)
-    
-    _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
-    top_city_emb = e_city(top_city_id) # B,N_CITY,EC
-    
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
-    
+    x = tf.keras.layers.Concatenate()([x, xc])
+
+    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x)
+    x1 = tf.keras.layers.Dropout(dropout_rate)(x1)
+
+    x2 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x1)
+    x2 = tf.keras.layers.Dropout(dropout_rate)(x2)
+
+    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
+
+    _, top_city_id = tf.math.top_k(prob, N_CITY)
+    top_city_emb = e_city(top_city_id)
+
+    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x1)
+    prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+    prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
+
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
-    
-    model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
+
+    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
     opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
-    model.compile(loss=loss, optimizer = opt, metrics=[mtr])
+    model.compile(loss=loss, optimizer=opt, metrics=[mtr])
     return model
 
 # %% [markdown]
@@ -435,6 +439,7 @@ WEIGHT_PATH = './'
 for fold in range(5):
     if fold>DO_FOLDS-1: continue
     
+    validation_scores=[]
     print('#'*25)
     print('### FOLD %i'%(fold+1))
     
@@ -464,6 +469,8 @@ for fold in range(5):
 
         def on_epoch_end(self, epoch, logs=None):
             # Eğitim sırasında her epoch tamamlandığında çağrılır
+            validation_scores.append(logs['val_weighted_sum_sparse_top_k_categorical_accuracy'])
+
             log_string = (
                 f"###################################################\n"
                 f"Epoch {epoch + 1}/{self.params['epochs']} - \n"
@@ -491,7 +498,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs13122023.txt')
+    aum = CustomCallback(filename='accuracy_logs_GRU_1M_DropOut.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -501,6 +508,28 @@ for fold in range(5):
           validation_data = (valid[FEATURES].to_pandas(),valid[TARGET].to_pandas()),
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
+    
+    rng = [i for i in range(5)]
+    y = [validation_scores[x] for x in rng]
+
+    fig, ax = plt.subplots()
+
+    ax.plot(rng, y, '-o')
+    # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
+    plt.xticks(rng, [f'{val:.1f}' for val in rng])
+    
+    plt.grid()
+    plt.xlabel('epoch', size=14)
+    plt.ylabel('Accuracy', size=14)
+    plt.title('Accuracy Schedule', size=16)
+    
+    
+    # Her bir veri noktasının üzerine tam değeri yazdırma
+    for i, txt in enumerate(y):
+        ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
+
+    plt.show()
+    #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid
     gc.collect()
@@ -695,6 +724,7 @@ test[COLS].head()
 if DO_TEST:
     test[COLS].to_csv('submission-MLPx-RNN_v%i.csv'%VER,index=False)
 
+print("BAŞARDINIZ") 
 #wandb.finish()
 
 
