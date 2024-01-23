@@ -265,7 +265,7 @@ cols
 # # GRU-MS-SMF 5 Fold Model
 
 # %%
-os.environ['TF_MEMORY_ALLOCATION'] = "0.8" # fraction of free memory
+os.environ['TF_MEMORY_ALLOCATION'] = "0.7" # fraction of free memory
 
 # %%
 import tensorflow as tf
@@ -364,7 +364,7 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         return prob
     
 
-def build_model(l2_reg_alpha=0.00001):
+def build_model(l2_reg_alpha=0.00000001):
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
     i, j = emb_map['city_id_lag1']
@@ -437,6 +437,7 @@ WEIGHT_PATH = './'
 #for fold in range(5) Daha kısa sürede dönmesi için 1'e çektim
 for fold in range(5):
     if fold>DO_FOLDS-1: continue
+    
     validation_scores=[]
     print('#'*25)
     print('### FOLD %i'%(fold+1))
@@ -450,7 +451,7 @@ for fold in range(5):
         
     # VALIDATION DATA
     valid = raw.loc[ (raw.fold==fold)&(raw.istest==0)&(raw.icount==0)&(raw.N>=4)&(raw.reverse==0) ].copy()
-    
+
     print('### train shape',train.shape,'valid shape', valid.shape)    
     print('#'*25)
         
@@ -466,8 +467,9 @@ for fold in range(5):
             self.filename = filename
 
         def on_epoch_end(self, epoch, logs=None):
-            validation_scores.append(logs['val_weighted_sum_sparse_top_k_categorical_accuracy'])
             # Eğitim sırasında her epoch tamamlandığında çağrılır
+            validation_scores.append(logs['val_weighted_sum_sparse_top_k_categorical_accuracy'])
+
             log_string = (
                 f"###################################################\n"
                 f"Epoch {epoch + 1}/{self.params['epochs']} - \n"
@@ -526,6 +528,8 @@ for fold in range(5):
         ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
 
     plt.show()
+    #wandb.log({"Accuracy": validation_score[8]})
+    
     del train, valid
     gc.collect()
 
