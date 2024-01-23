@@ -32,7 +32,7 @@ ax.text(rng[-1], avgS[-1], f'{avgS[-1]:.4f}', ha='right', va='bottom')
 
 plt.xticks(rng, [f'{val:.1f}' for val in rng])
 plt.grid()
-plt.xlabel('Epoch', size=14)
+plt.xlabel('Fold', size=14)
 plt.ylabel('Accuracy Rate', size=14)
 plt.title('Overall Success Rate LSTM', size=16)
 plt.legend()

@@ -364,7 +364,7 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         return prob
     
 
-def build_model(dropout_rate=0.5, l2_reg_alpha=0.01):
+def build_model(dropout_rate=0.0000001, l2_reg_alpha=0.00000001):
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
     i, j = emb_map['city_id_lag1']

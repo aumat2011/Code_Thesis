@@ -364,7 +364,7 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         return prob
     
 
-def build_model(dropout_rate=0.5, l2_reg_alpha=0.01):
+def build_model(l1_reg_alpha=0.00000001):
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
     i, j = emb_map['city_id_lag1']
@@ -385,19 +385,18 @@ def build_model(dropout_rate=0.5, l2_reg_alpha=0.01):
     x = tf.keras.layers.Concatenate()(embs)
     x = tf.keras.layers.Concatenate()([x, xc])
 
-    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x)
-    x1 = tf.keras.layers.Dropout(dropout_rate)(x1)
-
-    x2 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x1)
-    x2 = tf.keras.layers.Dropout(dropout_rate)(x2)
+    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(l1_reg_alpha))(x)
+    x2 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(l1_reg_alpha))(x1)
 
     prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
 
     _, top_city_id = tf.math.top_k(prob, N_CITY)
     top_city_emb = e_city(top_city_id)
 
-    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x1)
+    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(l1_reg_alpha))(x1)
     prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+
+    x2 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l1(l1_reg_alpha))(x2)
     prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
 
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
@@ -498,7 +497,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_GRU_1M_DropOutV2.txt')
+    aum = CustomCallback(filename='accuracy_logs_GRU_1M_L1.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
