@@ -9,7 +9,8 @@ import numpy as np
 #rates = [0.5495, 0.5495, 0.5508, 0.5490, 0.5430] #OVERALL L2 1M - BEST FOR EACH FOLD
 #rates = [0.5523, 0.5498, 0.5532, 0.5504, 0.5460] #OVERALL DropOut 1M - BEST FOR EACH FOLD
 #rates = [0.5421, 0.5425, 0.5430, 0.5400, 0.5363] #OVERALL L1 1M - BEST FOR EACH FOLD
-rates = [0.5565, 0.5548, 0.5575, 0.5524, 0.5524] #OVERALL Adam 1M - BEST FOR EACH FOLD
+#rates = [0.5565, 0.5548, 0.5575, 0.5524, 0.5524] #OVERALL Adam 1M - BEST FOR EACH FOLD
+rates = [0.5560, 0.5540, 0.5561, 0.5529, 0.5518] #OVERALL LSTM Adam 1M - BEST FOR EACH FOLD
 
 def lrfn(epoch):
     return rates[epoch]
@@ -38,6 +39,6 @@ plt.xticks(rng, [f'{val:.1f}' for val in rng])
 plt.grid()
 plt.xlabel('Fold', size=14)
 plt.ylabel('Accuracy Rate', size=14)
-plt.title('Overall Success GRU on 1M records', size=16)
+plt.title('Overall Success LSTM on 1M records', size=16)
 plt.legend()
 plt.show()
