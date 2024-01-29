@@ -1,125 +1,125 @@
 ###################################################
 Epoch 1/5 - 
-Loss: 20.9827 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5135
+Loss: 38.3023 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3146
 ###################################################
 ###################################################
 Epoch 2/5 - 
-Loss: 18.7608 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5270
+Loss: 31.0449 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3870
 ###################################################
 ###################################################
 Epoch 3/5 - 
-Loss: 16.9744 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5521
+Loss: 28.8704 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3920
 ###################################################
 ###################################################
 Epoch 4/5 - 
-Loss: 16.5984 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5548
+Loss: 28.6942 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3925
 ###################################################
 ###################################################
 Epoch 5/5 - 
-Loss: 16.5454 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5547
+Loss: 28.6771 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3926
 ###################################################
 ###################################################
 Epoch 1/5 - 
-Loss: 20.9872 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5132
+Loss: 38.3044 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3116
 ###################################################
 ###################################################
 Epoch 2/5 - 
-Loss: 18.7764 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5290
+Loss: 30.9724 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3857
 ###################################################
 ###################################################
 Epoch 3/5 - 
-Loss: 16.9881 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5497
+Loss: 28.7842 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3904
 ###################################################
 ###################################################
 Epoch 4/5 - 
-Loss: 16.6186 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5521
+Loss: 28.6040 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3912
 ###################################################
 ###################################################
 Epoch 5/5 - 
-Loss: 16.5608 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5521
+Loss: 28.5882 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3911
 ###################################################
 ###################################################
 Epoch 1/5 - 
-Loss: 20.9399 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5106
+Loss: 38.4013 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3164
 ###################################################
 ###################################################
 Epoch 2/5 - 
-Loss: 18.7432 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5260
+Loss: 30.9601 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3878
 ###################################################
 ###################################################
 Epoch 3/5 - 
-Loss: 16.9628 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5519
+Loss: 28.7684 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3936
 ###################################################
 ###################################################
 Epoch 4/5 - 
-Loss: 16.5868 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5534
+Loss: 28.5921 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3940
 ###################################################
 ###################################################
 Epoch 5/5 - 
-Loss: 16.5310 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5538
+Loss: 28.5734 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3938
 ###################################################
 ###################################################
 Epoch 1/5 - 
-Loss: 20.9506 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5163
+Loss: 38.3794 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3132
 ###################################################
 ###################################################
 Epoch 2/5 - 
-Loss: 18.7536 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5295
+Loss: 31.0065 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3900
 ###################################################
 ###################################################
 Epoch 3/5 - 
-Loss: 16.9761 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5520
+Loss: 28.8204 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3952
 ###################################################
 ###################################################
 Epoch 4/5 - 
-Loss: 16.6011 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5528
+Loss: 28.6444 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3954
 ###################################################
 ###################################################
 Epoch 5/5 - 
-Loss: 16.5426 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5528
+Loss: 28.6252 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3955
 ###################################################
 ###################################################
 Epoch 1/5 - 
-Loss: 20.9336 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5096
+Loss: 38.1901 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3117
 ###################################################
 ###################################################
 Epoch 2/5 - 
-Loss: 18.7466 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5222
+Loss: 30.9450 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3812
 ###################################################
 ###################################################
 Epoch 3/5 - 
-Loss: 16.9678 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5467
+Loss: 28.7940 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3870
 ###################################################
 ###################################################
 Epoch 4/5 - 
-Loss: 16.5878 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5489
+Loss: 28.6127 - S
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3875
 ###################################################
 ###################################################
 Epoch 5/5 - 
-Loss: 16.5315 - 
-val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5485
+Loss: 28.5943 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.3876
 ###################################################

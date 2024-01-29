@@ -34,10 +34,9 @@ MAX_GPU_MEMORY_MB = 20000 #hafızayı aşmaması için ekledim 0410
 TRAIN_WITH_TEST = True
 # ONLY DO THIS MANY FOLDS
 #DO_FOLDS = 5 Daha kısa sürede dönmesi için 1'e çektim
-DO_FOLDS = 1
+DO_FOLDS = 5
 # MAKE SUBMISSION OR NOT
-#DO_TEST = True
-DO_TEST = False
+DO_TEST = True
 
 # %%
 import pandas as pd, numpy as np
@@ -106,7 +105,7 @@ def top4_metric( val, istest=0, pos=0 , target='city_id'):
 #%%time
 PATH = './'
 #raw = cudf.read_csv('../../00_Data/train_and_test_2.csv')
-raw = cudf.read_csv('00_Data/train_and_test_2 _300K.csv')
+raw = cudf.read_csv('00_Data/train_and_test_2.csv')
 print(raw.shape)
 
 # %%
@@ -434,9 +433,10 @@ WEIGHT_PATH = './'
 
 # %%
 #for fold in range(5) Daha kısa sürede dönmesi için 1'e çektim
-for fold in range(1):
+for fold in range(5):
     if fold>DO_FOLDS-1: continue
     
+    # validation_scores=[]
     print('#'*25)
     print('### FOLD %i'%(fold+1))
     
@@ -466,6 +466,8 @@ for fold in range(1):
 
         def on_epoch_end(self, epoch, logs=None):
             # Eğitim sırasında her epoch tamamlandığında çağrılır
+            # validation_scores.append(logs['val_weighted_sum_sparse_top_k_categorical_accuracy'])
+
             log_string = (
                 f"###################################################\n"
                 f"Epoch {epoch + 1}/{self.params['epochs']} - \n"
@@ -493,7 +495,7 @@ for fold in range(1):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_GRU_300K_StochasticGradientDescent.txt')
+    aum = CustomCallback(filename='accuracy_logs_2901_1500K_StochasticGradientDescent.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -501,8 +503,31 @@ for fold in range(1):
     model = build_model()
     model.fit(train[FEATURES].to_pandas(),train[TARGET].to_pandas(),
           validation_data = (valid[FEATURES].to_pandas(),valid[TARGET].to_pandas()),
-          epochs=1 #epochs=5
+          epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
+    
+    # rng = [i for i in range(5)]
+    # y = [validation_scores[x] for x in rng]
+
+    # fig, ax = plt.subplots()
+
+    # ax.plot(rng, y, '-o')
+    # # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
+    # plt.xticks(rng, [f'{val:.1f}' for val in rng])
+    
+    # plt.grid()
+    # plt.xlabel('epoch', size=14)
+    # plt.ylabel('Accuracy', size=14)
+    # plt.title('Accuracy Schedule', size=16)
+    
+    
+    # # Her bir veri noktasının üzerine tam değeri yazdırma
+    # for i, txt in enumerate(y):
+    #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
+
+    # plt.show()
+    #wandb.log({"Accuracy": validation_score[8]})
+    
     del train, valid
     gc.collect()
 
@@ -534,7 +559,7 @@ for k in range(DO_FOLDS):
 valid = []
 
 #for fold in range(5)
-for fold in range(1):
+for fold in range(5):
     if fold>DO_FOLDS-1: continue
     print('#'*25)
     print('### FOLD %i'%(fold+1))
