@@ -19,7 +19,9 @@ import numpy as np
 #rates = [0.2669, 0.2663, 0.2732, 0.2675, 0.2675] #OVERALL GRU Adagrad 1500 K - BEST FOR EACH FOLD
 #rates = [0.1289, 0.1268, 0.1259, 0.1307, 0.1248] #OVERALL GRU Adadelta 1500 K - BEST FOR EACH FOLD
 #rates = [0.5548, 0.5521, 0.5538, 0.5528, 0.5489] #OVERALL GRU RMSprop 1500 K - BEST FOR EACH FOLD
-rates = [0.3926, 0.3912, 0.3940, 0.3955, 0.3876] #OVERALL GRU SGD 1500 K - BEST FOR EACH FOLD
+#rates = [0.3926, 0.3912, 0.3940, 0.3955, 0.3876] #OVERALL GRU SGD 1500 K - BEST FOR EACH FOLD
+#rates = [0.5687, 0.5663, 0.5669, 0.5657, 0.5637] #OVERALL GRU NADAM 1500 K 0703 - BEST FOR EACH FOLD
+rates = [0.5696, 0.5678, 0.5677, 0.5667, 0.5638] #OVERALL GRU NADAM 1500 K 0803 DIMENSIONS 600- BEST FOR EACH FOLD
 
 def lrfn(epoch):
     return rates[epoch]
@@ -48,6 +50,6 @@ plt.xticks(rng, [f'{val:.1f}' for val in rng])
 plt.grid()
 plt.xlabel('Fold', size=14)
 plt.ylabel('Accuracy Rate', size=14)
-plt.title('Overall Success GRU with SGD on 1500K Records', size=16)
+plt.title('Overall Success GRU with NADAM on 1500K Records', size=16)
 plt.legend()
 plt.show()

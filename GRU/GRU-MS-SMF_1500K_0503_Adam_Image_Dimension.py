@@ -191,7 +191,7 @@ for c in CATS:
 
 # %%
 LAGS = 5
-EC = 400
+EC = 600
 
 # ENGINEER LAG FEATURES
 for i in range(1,LAGS+1):
@@ -399,8 +399,7 @@ def build_model():
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
     
     model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
-    #opt = tf.keras.optimizers.Adam(lr=0.001)
-    opt = tf.keras.optimizers.Nadam(lr=0.001,beta_1=0.9,beta_2=0.999)
+    opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
     model.compile(loss=loss, optimizer = opt, metrics=[mtr])
@@ -495,7 +494,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_0803_1500K_Nadam_.txt')
+    aum = CustomCallback(filename='accuracy_logs_0803_Dimensions_600.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -512,7 +511,7 @@ for fold in range(5):
     # fig, ax = plt.subplots()
 
     # ax.plot(rng, y, '-o')
-    # # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
+    # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
     # plt.xticks(rng, [f'{val:.1f}' for val in rng])
     
     # plt.grid()
@@ -521,11 +520,11 @@ for fold in range(5):
     # plt.title('Accuracy Schedule', size=16)
     
     
-    # # Her bir veri noktasının üzerine tam değeri yazdırma
+    # Her bir veri noktasının üzerine tam değeri yazdırma
     # for i, txt in enumerate(y):
     #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
 
-    # plt.show()
+    #plt.show()
     #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid
