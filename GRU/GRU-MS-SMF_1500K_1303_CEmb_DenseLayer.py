@@ -392,9 +392,12 @@ def build_model():
     _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
     top_city_emb = e_city(top_city_id) # B,N_CITY,EC
 
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
+    # City embedding için yeni mimari
+    city_emb_layer = tf.keras.layers.Dense(EC, activation='relu')(top_city_emb)
+    
+    #x1 = Linear(512+256, 'relu')(x1)
+    prob_1 = EmbDotSoftMax()(x1,city_emb_layer,top_city_id,prob)
+    prob_2 = EmbDotSoftMax()(x2,city_emb_layer,top_city_id,prob)
     
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
     
@@ -494,7 +497,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs.txt')
+    aum = CustomCallback(filename='accuracy_logs_1500K_1303_CEmb_Layer.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})

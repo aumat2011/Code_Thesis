@@ -23,8 +23,9 @@ import numpy as np
 #rates = [0.5687, 0.5663, 0.5669, 0.5657, 0.5637] #OVERALL GRU NADAM 1500 K 0703 - BEST FOR EACH FOLD
 #rates = [0.5696, 0.5678, 0.5677, 0.5667, 0.5638] #OVERALL GRU NADAM 1500 K 0803 DIMENSIONS 600- BEST FOR EACH FOLD
 #rates = [0.6621, 0.6680, 0.6635, 0.6648, 0.6587] #OVERALL GRU ADAM 1 M 1103 DECREASED DATA- BEST FOR EACH FOLD
-rates = [0.7588, 0.7638, 0.7612, 0.7598, 0.7529] #OVERALL GRU ADAM 300 K 1203 DECREASED DATA- BEST FOR EACH FOLD
+#rates = [0.7588, 0.7638, 0.7612, 0.7598, 0.7529] #OVERALL GRU ADAM 500 K 1203 DECREASED DATA- BEST FOR EACH FOLD
 #rates = [0.8067, 0.8152, 0.8089, 0.8115, 0.8054] #OVERALL GRU ADAM 300 K 1203 DECREASED DATA- BEST FOR EACH FOLD
+rates = [0.5692, 0.5671, 0.5666, 0.5671, 0.5639] #OVERALL GRU ADAM 1500 K 1303 CITY EMBEDDING LAYER- BEST FOR EACH FOLD
 
 def lrfn(epoch):
     return rates[epoch]
@@ -53,6 +54,6 @@ plt.xticks(rng, [f'{val:.1f}' for val in rng])
 plt.grid()
 plt.xlabel('Fold', size=14)
 plt.ylabel('Accuracy Rate', size=14)
-plt.title('Overall Success GRU with ADAM on 500 K Modified Records', size=16)
+plt.title('Overall Success GRU with City Embedding Layer', size=16)
 plt.legend()
 plt.show()
