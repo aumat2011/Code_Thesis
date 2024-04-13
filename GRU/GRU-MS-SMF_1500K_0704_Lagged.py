@@ -190,8 +190,8 @@ for c in CATS:
     print('created',c+'_')
 
 # %%
-LAGS = 5
-EC = 400
+LAGS = 6
+EC = 600
 
 # ENGINEER LAG FEATURES
 for i in range(1,LAGS+1):
@@ -399,8 +399,7 @@ def build_model():
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
     
     model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
-    #opt = tf.keras.optimizers.Adam(lr=0.001)
-    opt = tf.keras.optimizers.Nadam(lr=0.001,beta_1=0.9,beta_2=0.999)
+    opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
     model.compile(loss=loss, optimizer = opt, metrics=[mtr])
@@ -436,7 +435,6 @@ WEIGHT_PATH = './'
 for fold in range(5):
     if fold>DO_FOLDS-1: continue
     
-    validation_scores=[]
     print('#'*25)
     print('### FOLD %i'%(fold+1))
     
@@ -466,8 +464,6 @@ for fold in range(5):
 
         def on_epoch_end(self, epoch, logs=None):
             # Eğitim sırasında her epoch tamamlandığında çağrılır
-            validation_scores.append(logs['val_weighted_sum_sparse_top_k_categorical_accuracy'])
-
             log_string = (
                 f"###################################################\n"
                 f"Epoch {epoch + 1}/{self.params['epochs']} - \n"
@@ -495,7 +491,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_Nadam_1204.txt')
+    aum = CustomCallback(filename='accuracy_logs_0704_lags.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -505,28 +501,6 @@ for fold in range(5):
           validation_data = (valid[FEATURES].to_pandas(),valid[TARGET].to_pandas()),
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
-    
-    # rng = [i for i in range(5)]
-    # y = [validation_scores[x] for x in rng]
-
-    # fig, ax = plt.subplots()
-
-    # ax.plot(rng, y, '-o')
-    # # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
-    # plt.xticks(rng, [f'{val:.1f}' for val in rng])
-    
-    # plt.grid()
-    # plt.xlabel('epoch', size=14)
-    # plt.ylabel('Accuracy', size=14)
-    # plt.title('Accuracy Schedule', size=16)
-    
-    
-    # # Her bir veri noktasının üzerine tam değeri yazdırma
-    # for i, txt in enumerate(y):
-    #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
-
-    # plt.show()
-    #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid
     gc.collect()

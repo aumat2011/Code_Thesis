@@ -277,7 +277,7 @@ gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafÄ
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*19)]
 )
 
 # %% [markdown]
@@ -492,7 +492,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_LSTM_300K_Adam.txt')
+    aum = CustomCallback(filename='Conclusion_accuracy_logs_LSTM_Adam_300K_1104.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})

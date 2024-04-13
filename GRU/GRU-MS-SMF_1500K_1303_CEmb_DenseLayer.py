@@ -497,7 +497,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_1500K_1803_CEmb_Layer_Dimension.txt')
+    aum = CustomCallback(filename='Conclusion_accuracy_logs_Dimension_DenseLayer_CEmb_1204.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
