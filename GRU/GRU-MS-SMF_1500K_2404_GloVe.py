@@ -48,6 +48,10 @@ from sklearn.model_selection import GroupKFold
 import wandb
 import random
 import keyboard
+import numpy as np
+import tensorflow as tf
+# from tensorflow.keras.layers import Input, Embedding, Concatenate, Dense, GRU
+# from tensorflow.keras.models import Model
 pd.set_option('display.max_columns', None)
 
 
@@ -190,7 +194,7 @@ for c in CATS:
     print('created',c+'_')
 
 # %%
-LAGS = 6
+LAGS = 5
 EC = 400
 
 # ENGINEER LAG FEATURES
@@ -293,6 +297,9 @@ for c in FEATURES:
 # %%
 # EMBEDDING OUTPUT SIZES
 #EC = 400
+# Özelliklerin embedding boyutlarını belirleyin
+EMBEDDING_DIMS = [4, 3, 3, 6, 2, 60, 3, 14, 7, 7, 200, 18, 9, 3, 4, 400, 400, 400, 400, 400]
+
 cts2 = [4,3,3,6,2,60,3,14,7,7,200,18,9,3,4]+[EC]*len(cols)
 
 # %%
@@ -362,47 +369,274 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         prob = tf.scatter_nd(idx, x, tf.shape(prob)) + 1e-6
         return prob
     
+glove_embedding_path = '00_Data/glove.6B.100d.txt'  # Örneğin, dosya yolu
 
-def build_model():
+# Veri setinizdeki metinsel özellikler için bir kelime dizini oluşturun
+word_index = {"The Devilfire Empire":1,
+"Mundania":2,
+"Takistan":3,
+"Nevoruss":4,
+"Sarkhan":5,
+"Dawsbergen":6,
+"Genosha":7,
+"Saint Marie":8,
+"West Hun Chiu":9,
+"Ragaan":10,
+"Squamuglia":11,
+"Pullamawang":12,
+"Svenborgia":13,
+"Aslerfan":14,
+"Yellow Empire":15,
+"Slovetzia":16,
+"Nambutu":17,
+"Gilead":18,
+"Florin":19,
+"Novoselic":20,
+"Phaic TÄƒn":21,
+"Matobo":22,
+"Syldavia":23,
+"Utopia":24,
+"Turgistan":25,
+"Costa Luna":26,
+"Veyshnoria":27,
+"Feldenberg":28,
+"Altis and Stratis":29,
+"Kumbolaland":30,
+"Sokovia":31,
+"Bartovia":32,
+"Tcherkistan":33,
+"Durhan":34,
+"Osterlich":35,
+"Guilder":36,
+"Wadiya":37,
+"Maltovia":38,
+"Merania":39,
+"Penguina (L'Ã®le des Pingouins)":40,
+"Shtischtorchnia":41,
+"Grinlandia":42,
+"Zephyria":43,
+"Wredpryd":44,
+"Vulgaria":45,
+"Fook Island":46,
+"Moronika":47,
+"Datlof":48,
+"Vadeem":49,
+"San Marcos":50,
+"Bultan":51,
+"Franchia":52,
+"Laurania":53,
+"Leutonia":54,
+"Kazahrus":55,
+"Kyrat":56,
+"Pokolistan":57,
+"Panem":58,
+"Sahrani":59,
+"Oceania":60,
+"West Angola":61,
+"Bacteria":62,
+"Sardovia":63,
+"Markovia":64,
+"Borginia":65,
+"Outer Heaven":66,
+"New Germany":67,
+"Eurasia":68,
+"Polrugaria":69,
+"Aldovia":70,
+"Kunami":71,
+"Grenyarnia":72,
+"Elbonia":73,
+"Kangan":74,
+"Tyranistan":75,
+"Alvonia":76,
+"Cobra Island":77,
+"Basran":78,
+"Pokrovia":79,
+"Bruzundanga":80,
+"Tsergovia":81,
+"Samavia":82,
+"Chinese Federation":83,
+"Urk (also Uruk)":84,
+"Latveria":85,
+"Kamistan":86,
+"Romanza":87,
+"Idris":88,
+"Atlantis":89,
+"GÃ©rolstein":90,
+"Angrezi Raj":91,
+"Nairomi":92,
+"Coalition States":93,
+"Medici":94,
+"":95,
+"Glubbdubdrib":96,
+"Buranda":97,
+"San Theodoros":98,
+"Sylvania":99,
+"Zekistan":100,
+"Brobdingnag":101,
+"Marina Venetta":102,
+"Lugash":103,
+"Carpathia":104,
+"Nerdocrumbesia":105,
+"Shangri-La":106,
+"Gondour":107,
+"Danu":108,
+"Congaree Socialist Republic":109,
+"Holy Britannian Empire":110,
+"Baltish":111,
+"Trans-Carpathia":112,
+"Axphain":113,
+"Patusan":114,
+"Almaigne":115,
+"Norteguay":116,
+"Groland":117,
+"Urmania":118,
+"Carjackistan":119,
+"Isle of Fogg":120,
+"Kahndaq":121,
+"San SombrÃ¨ro":122,
+"Aldorria":123,
+"Lower Slobbovia":124,
+"Tirania":125,
+"Genovia":126,
+"Flausenthurm":127,
+"Slaka":128,
+"Republic of New Rearendia":129,
+"MolvanÃ®a":130,
+"Freedonia":131,
+"Novistrana":132,
+"Buenaventura":133,
+"Santa Prisca":134,
+"Rhelasia":135,
+"Yudonia":136,
+"Uqbar":137,
+"Robo-Hungarian Empire":138,
+"Braganza":139,
+"Qasha":140,
+"Nuevo Rico":141,
+"Rook Islands":142,
+"Palombia":143,
+"Russian Democratic Union":144,
+"Bandaria":145,
+"Kazirstan":146,
+"Metrofulus":147,
+"Absurdistan":148,
+"North American Union":149,
+"Poictesme":150,
+"Halla":151,
+"Sodor":152,
+"Kasnia":153,
+"El Othar":154,
+"Bialya":155,
+"Tijata":156,
+"Marshovia":157,
+"IllÃ©a":158,
+"Lilliput":159,
+"Edonia":160,
+"St. George's Island":161,
+"Graustark":162,
+"Drusselstein":163,
+"Babar's Kingdom":164,
+"Grand Fenwick":165,
+"Graznavia":166,
+"San Salvador":167,
+"Krakozhia":168,
+"Bolumbia":169,
+"Gondal":170,
+"Erewhon":171,
+"San Serriffe":172,
+"Yerba":173,
+"Glovania":174,
+"Taronia":175,
+"Bahari":176,
+"Moldavia":177,
+"Chernarus":178,
+"Urkesh":179,
+"Khura'in":180,
+"Bangalla":181,
+"SÃ£o Rico":182,
+"Norland":183,
+"Caledonia":184,
+"Bahavia":185,
+"Naruba":186,
+"Mypos":187,
+"Sunda":188,
+"Illyria":189,
+"San Lorenzo":190,
+"Lovitzna":191,
+"Rolisica":192,
+"Bozatta":193,
+"Isla Island":194,
+"Nova Africa":195,
+"Borostyria":196}  # Örnek olarak, gerçek verilerle doldurulmalıdır.
+
+def load_glove_embeddings(glove_embedding_path, word_index, embedding_dim):
+
+    # Load pre-trained GloVe embeddings
+    print("Loading GloVe embeddings...")
+    embeddings_index = {}
+    with open(glove_embedding_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            values = line.split()
+            word = values[0]
+            coefs = np.asarray(values[1:], dtype='float32')
+            embeddings_index[word] = coefs
+    print("GloVe embeddings loaded successfully.")
+
+    # Create an embedding matrix
+    num_words = len(word_index) + 1
+    embedding_matrix = np.zeros((num_words, embedding_dim))
+    for word, i in word_index.items():
+        embedding_vector = embeddings_index.get(word)
+        if embedding_vector is not None:
+            embedding_matrix[i] = embedding_vector
+
+    return embedding_matrix
+
+# GloVe embeddinglerini yükleme fonksiyonu
+def build_model_with_glove_embedding(embedding_matrix):
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
-    i,j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i,j)
-    city_embs = []
     
-    for k,f in enumerate(FEATURES):
-        i,j = emb_map[f]
-        if f.startswith('city_id'):
-            city_embs.append(e_city(inp[:,k]))
+    for k, f in enumerate(FEATURES):
+        if f in ["booker_country", "hotel_country"]:
+            # Metinsel özellikler için GloVe embeddinglerini kullanın
+            embedding_dim = EMBEDDING_DIMS[k]  # EMBEDDING_DIMS listesinden boyutu alın
+            num_words = len(word_index) + 1  # Kelime dizinindeki kelime sayısı + 1
+            emb_layer = tf.keras.layers.Embedding(num_words, embedding_dim, weights=[embedding_matrix], trainable=False)
+            emb = emb_layer(inp[:, k])
+            emb = tf.keras.layers.Reshape((1, embedding_dim))(emb)  # Embedding boyutunu 1xembedding_dim yapın
+            embs.append(emb)
         else:
-            e = tf.keras.layers.Embedding(i,j)
-            embs.append(e(inp[:,k]))
+            # Diğer özellikler için normal embedding katmanlarını kullanın
+            i, j = emb_map[f]
+            embedding_dim = EMBEDDING_DIMS[k]  # EMBEDDING_DIMS listesinden boyutu alın
+            emb = tf.keras.layers.Embedding(i, embedding_dim)(inp[:, k])
+            emb = tf.keras.layers.Reshape((1, embedding_dim))(emb)  # Embedding boyutunu 1xembedding_dim yapın
+            embs.append(emb)
     
-    xc = tf.stack(city_embs, axis=1) # B, T, F
-    xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
-    #xc, state_h, state_c = tf.keras.layers.LSTM(EC, activation='tanh', return_state=True)(xc)
+    # Tüm girişleri aynı boyuta getirin
+    x = tf.keras.layers.Concatenate(axis=1)(embs)
     
-    x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x,xc])
+    xc = tf.keras.layers.GRU(128, activation='tanh')(x)
     
-    x1 = Linear(512+256, 'relu')(x)
-    x2 = Linear(512+256, 'relu')(x1)
-    prob = tf.keras.layers.Dense(t_ct,activation='softmax',name='main_output')(x2)
+    x1 = tf.keras.layers.Dense(512+256, activation='relu')(x)
+    x2 = tf.keras.layers.Dense(512+256, activation='relu')(x1)
+    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
     
-    _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
-    top_city_emb = e_city(top_city_id) # B,N_CITY,EC
+    _, top_city_id = tf.math.top_k(prob, N_CITY)
+    top_city_emb = emb_map['city_id_lag1'](top_city_id)
     
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
+    x1 = tf.keras.layers.Dense(512+256, activation='relu')(x1)
+    prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+    prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
     
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
     
-    model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
+    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
     opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
-    model.compile(loss=loss, optimizer = opt, metrics=[mtr])
+    model.compile(loss=loss, optimizer=opt, metrics=[mtr])
     return model
 
 # %% [markdown]
@@ -491,13 +725,19 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_2404_lags.txt')
+    aum = CustomCallback(filename='accuracy_logs_2404_GloVe.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
     
-    model = build_model()
-    model.fit(train[FEATURES].to_pandas(),train[TARGET].to_pandas(),
+    # GloVe embeddingleri yükle
+    embedding_dim = 100  # GloVe embedding boyutu
+    embedding_matrix = load_glove_embeddings(glove_embedding_path, word_index, embedding_dim)
+
+    # GloVe embeddingleri kullanarak modeli oluştur
+    model_with_glove = build_model_with_glove_embedding(embedding_matrix)
+
+    model_with_glove.fit(train[FEATURES].to_pandas(),train[TARGET].to_pandas(),
           validation_data = (valid[FEATURES].to_pandas(),valid[TARGET].to_pandas()),
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
@@ -524,7 +764,7 @@ CHUNK = 1024*4
 models = []
 for k in range(DO_FOLDS):
     if k>DO_FOLDS-1: continue
-    model = build_model()
+    model = build_model_with_glove_embedding(embedding_matrix)
     name = f'{WEIGHT_PATH}/MLPx_fold{k}_v{VER}.h5'
     print(name)
     model.load_weights(name)
