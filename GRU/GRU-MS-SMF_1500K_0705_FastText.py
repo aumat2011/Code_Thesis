@@ -48,6 +48,8 @@ from sklearn.model_selection import GroupKFold
 import wandb
 import random
 import keyboard
+import fasttext
+
 pd.set_option('display.max_columns', None)
 
 
@@ -347,64 +349,151 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         super(EmbDotSoftMax, self).__init__()
         self.d1 = tf.keras.layers.Dense(EC) 
     
+    # def call(self, x, top_city_emb, top_city_id, prob):
+    #     emb_pred = self.d1(x) # B,EC
+    #     emb_pred = tf.expand_dims(emb_pred, axis=1) #B,1,EC
+    #     x = emb_pred*top_city_emb #B,N_CITY,EC
+    #     x = tf.math.reduce_sum(x, axis=2) #B,N_CITY
+    #     x = tf.nn.softmax(x) #B,N_CITY
+
+    #     rowids = tf.range(0,tf.shape(x)[0]) # B
+    #     rowids = tf.transpose(tf.tile([rowids],[N_CITY,1])) # B,N_CITY
+
+    #     idx = tf.stack([rowids,top_city_id],axis=2) # B, N_CITY, 2
+    #     idx = tf.cast(idx, tf.int32)
+    #     prob = tf.scatter_nd(idx, x, tf.shape(prob)) + 1e-6
+    #     return prob
     def call(self, x, top_city_emb, top_city_id, prob):
-        emb_pred = self.d1(x) # B,EC
-        emb_pred = tf.expand_dims(emb_pred, axis=1) #B,1,EC
-        x = emb_pred*top_city_emb #B,N_CITY,EC
-        x = tf.math.reduce_sum(x, axis=2) #B,N_CITY
-        x = tf.nn.softmax(x) #B,N_CITY
+        emb_pred = self.d1(x)  # B, EC
+        emb_pred = tf.expand_dims(emb_pred, axis=1)  # B, 1, EC
+        x = emb_pred * top_city_emb  # B, N_CITY, EC
+        x = tf.math.reduce_sum(x, axis=2)  # B, N_CITY
+        x = tf.nn.softmax(x)  # B, N_CITY
 
-        rowids = tf.range(0,tf.shape(x)[0]) # B
-        rowids = tf.transpose(tf.tile([rowids],[N_CITY,1])) # B,N_CITY
+        batch_size = tf.shape(x)[0]
+        rowids = tf.range(0, batch_size)  # B
+        rowids = tf.expand_dims(rowids, axis=1)  # B, 1
+        rowids = tf.tile(rowids, [1, N_CITY])  # B, N_CITY
 
-        idx = tf.stack([rowids,top_city_id],axis=2) # B, N_CITY, 2
+        idx = tf.concat([tf.expand_dims(rowids, axis=-1), tf.expand_dims(top_city_id, axis=-1)], axis=-1)
+        # idx = tf.stack([rowids, top_city_id], axis=2)  # B, N_CITY, 2
         idx = tf.cast(idx, tf.int32)
         prob = tf.scatter_nd(idx, x, tf.shape(prob)) + 1e-6
         return prob
     
+# Önceden eğitilmiş FastText modelini yükle
+#fasttext_model = fasttext.load_model("path_to_fasttext_model.bin")
+fasttext_model = fasttext.load_model("00_Data/FastText/crawl-300d-2M-subword.bin")
 
-def build_model():
-    inp = tf.keras.layers.Input(shape=(len(FEATURES),))
+# FastText modelinden kelime vektörlerini al
+# def get_fasttext_embedding(word):
+#     return fasttext_model.get_word_vector(word)
+
+# def get_fasttext_embedding(word_tensor):
+#     word = word_tensor.numpy().decode('utf-8')  # TensorFlow tensorunu stringe dönüştür
+#     return fasttext_model.get_word_vector(word)
+
+# def get_fasttext_embedding(word_tensor):
+#     word = tf.keras.backend.eval(word_tensor).decode('utf-8')
+#     return fasttext_model.get_word_vector(word)
+
+def get_word_vector_wrapper(word):
+    return fasttext_model.get_word_vector(word.numpy().decode('utf-8'))
+
+def get_fasttext_embedding(word_tensor):
+    return tf.py_function(get_word_vector_wrapper, [word_tensor], tf.float32)
+
+# Modelinize FastText embeddingleri yerine eklemek için özel embedding katmanlarını kullanın
+# def build_model_with_fasttext():
+#     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
+#     embs = []
+#     i, j = emb_map['city_id_lag1']
+#     e_city = tf.keras.layers.Embedding(i, j)
+#     city_embs = []
+    
+#     for k, f in enumerate(FEATURES):
+#         i, j = emb_map[f]
+#         if f.startswith('city_id'):
+#             city_embs.append(e_city(inp[:, k]))
+#         else:
+#             # Kelime yerine FastText embeddingleri kullan
+#             # Örneğin, 'word' kelimesi yerine FastText'ten gelen embedding kullanılabilir
+#             e = tf.keras.layers.Lambda(get_fasttext_embedding)(inp[:, k])
+#             embs.append(e)
+    
+#     xc = tf.stack(city_embs, axis=1)  # B, T, F
+#     xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
+    
+#     x = tf.keras.layers.Concatenate()(embs)
+#     x = tf.keras.layers.Concatenate()([x, xc])
+    
+#     x1 = Linear(512+256, 'relu')(x)
+#     x2 = Linear(512+256, 'relu')(x1)
+#     prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
+    
+#     _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
+#     top_city_emb = e_city(top_city_id)  # B,N_CITY,EC
+    
+#     x1 = Linear(512+256, 'relu')(x1)
+#     prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+#     prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
+    
+#     prob_ws = WeightedSum()(prob, prob_1, prob_2)
+    
+#     model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
+#     opt = tf.keras.optimizers.Adam(lr=0.001)
+#     loss = tf.keras.losses.SparseCategoricalCrossentropy()
+#     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
+#     model.compile(loss=loss, optimizer=opt, metrics=[mtr])
+#     return model
+
+def build_model_with_fasttext():
+    inp = tf.keras.layers.Input(shape=(len(FEATURES),))  # Giriş boyutunu belirtin
     embs = []
-    i,j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i,j)
     city_embs = []
     
-    for k,f in enumerate(FEATURES):
-        i,j = emb_map[f]
+    for k, f in enumerate(FEATURES):
+        i, j = emb_map[f]
         if f.startswith('city_id'):
-            city_embs.append(e_city(inp[:,k]))
+            e_city = tf.keras.layers.Embedding(i, j)
+            city_embs.append(e_city(inp[:, k]))
         else:
-            e = tf.keras.layers.Embedding(i,j)
-            embs.append(e(inp[:,k]))
+            e = tf.keras.layers.Lambda(get_fasttext_embedding)(inp[:, k])
+            e = tf.keras.layers.Flatten()(e)
+            embs.append(e)
     
-    xc = tf.stack(city_embs, axis=1) # B, T, F
+    xc = tf.stack(city_embs, axis=1)  # B, T, F
     xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
-    #xc, state_h, state_c = tf.keras.layers.LSTM(EC, activation='tanh', return_state=True)(xc)
     
-    x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x,xc])
-    
-    x1 = Linear(512+256, 'relu')(x)
-    x2 = Linear(512+256, 'relu')(x1)
-    prob = tf.keras.layers.Dense(t_ct,activation='softmax',name='main_output')(x2)
+    if embs:
+        x = tf.keras.layers.Concatenate()(embs)
+    else:
+        x = tf.keras.layers.Concatenate(axis=-1)([])
+        
+    x = tf.keras.layers.Concatenate()([x, xc])
+
+    x = tf.keras.layers.Input(shape=(None,400))
+
+    x1 = tf.keras.layers.Dense(512+256, 'relu')(x)
+    x2 = tf.keras.layers.Dense(512+256, 'relu')(x1)
+    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
     
     _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
-    top_city_emb = e_city(top_city_id) # B,N_CITY,EC
+    top_city_emb = e_city(top_city_id)  # B,N_CITY,EC
     
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
+    x1 = tf.keras.layers.Dense(512+256, 'relu')(x1)
+    prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+    prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
     
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
     
-    model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
-    #opt = tf.keras.optimizers.Adam(lr=0.001)
-    opt = tf.keras.optimizers.Nadam(lr=0.001,beta_1=0.9,beta_2=0.999)
+    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
+    opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
-    model.compile(loss=loss, optimizer = opt, metrics=[mtr])
+    model.compile(loss=loss, optimizer=opt, metrics=[mtr])
     return model
+
 
 # %% [markdown]
 # # Learning Schedule
@@ -436,7 +525,6 @@ WEIGHT_PATH = './'
 for fold in range(5):
     if fold>DO_FOLDS-1: continue
     
-    validation_scores=[]
     print('#'*25)
     print('### FOLD %i'%(fold+1))
     
@@ -466,8 +554,6 @@ for fold in range(5):
 
         def on_epoch_end(self, epoch, logs=None):
             # Eğitim sırasında her epoch tamamlandığında çağrılır
-            validation_scores.append(logs['val_weighted_sum_sparse_top_k_categorical_accuracy'])
-
             log_string = (
                 f"###################################################\n"
                 f"Epoch {epoch + 1}/{self.params['epochs']} - \n"
@@ -495,38 +581,16 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_Nadam_1204.txt')
+    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_FastText_0705.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
     
-    model = build_model()
+    model = build_model_with_fasttext()
     model.fit(train[FEATURES].to_pandas(),train[TARGET].to_pandas(),
           validation_data = (valid[FEATURES].to_pandas(),valid[TARGET].to_pandas()),
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
-    
-    # rng = [i for i in range(5)]
-    # y = [validation_scores[x] for x in rng]
-
-    # fig, ax = plt.subplots()
-
-    # ax.plot(rng, y, '-o')
-    # # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
-    # plt.xticks(rng, [f'{val:.1f}' for val in rng])
-    
-    # plt.grid()
-    # plt.xlabel('epoch', size=14)
-    # plt.ylabel('Accuracy', size=14)
-    # plt.title('Accuracy Schedule', size=16)
-    
-    
-    # # Her bir veri noktasının üzerine tam değeri yazdırma
-    # for i, txt in enumerate(y):
-    #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
-
-    # plt.show()
-    #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid
     gc.collect()
@@ -550,7 +614,7 @@ CHUNK = 1024*4
 models = []
 for k in range(DO_FOLDS):
     if k>DO_FOLDS-1: continue
-    model = build_model()
+    model = build_model_with_fasttext()
     name = f'{WEIGHT_PATH}/MLPx_fold{k}_v{VER}.h5'
     print(name)
     model.load_weights(name)

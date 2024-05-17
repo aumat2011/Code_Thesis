@@ -48,6 +48,7 @@ from sklearn.model_selection import GroupKFold
 import wandb
 import random
 import keyboard
+import gensim
 pd.set_option('display.max_columns', None)
 
 
@@ -82,21 +83,7 @@ def top4_metric( val, istest=0, pos=0 , target='city_id'):
         
     return (top1|top2|top3|top4).mean()  
 
-##Wandb Uygulaması
-# wandb.init(
-#     # set the wandb project where this run will be logged
-#     project="GRU-MS-SMF-LessData",
-#     config= {
-#             "TRAIN_BATCH_SIZE" : 512,
-#             "WORKERS" : 8,
-#             "LR" : 1e-3,
-#             "EPOCHS" : 5,
-#             "GRADIENT_ACCUMULATION" : 1,
-#             "EMBEDDING_DIM" : 64,
-#             "HIDDEN_DIM" :  1024,
-#             "DROPOUT_RATE" : 0.4,
-#             }
-# )  
+
 
 # %% [markdown]
 # # Feature Engineering
@@ -179,6 +166,16 @@ raw['dcount'] = raw['N']-raw['icount']-1
 # %%
 raw.head()
 
+
+model_path = "00_Data/FastText/crawl-300d-2M-subword.bin"
+ft_model = gensim.models.fasttext.load_facebook_model(model_path)
+
+embedding_matrix = np.zeros((len(ft_model.wv.key_to_index) + 1, ft_model.vector_size))
+for word, i in ft_model.wv.key_to_index.items():
+    embedding_vector = ft_model.wv[word]
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+
 # %%
 # LABEL ENCODE CATEGORICAL
 CATS = ['city_id','mn','dy1','dy2','length','device_class','affiliate_id','booker_country',
@@ -254,6 +251,7 @@ FEATURES = ['mn_', 'dy1_','dy2_','length_','device_class_',  'affiliate_id_', 'b
        'hotel_lag1','icount','dcount','city_first','length_total','gap_','isweekend_', 'season_'] + cols
 TARGET = ['city_id_']
 
+
 # %% [markdown]
 # **Note that the order should be ['city_id_lag3', 'city_id_lag2', 'city_id_lag1'] in the order of time for the sake of RNN**
 
@@ -286,14 +284,18 @@ tf.config.experimental.set_virtual_device_configuration(
 # EMBEDDING INPUT SIZES
 cts = []
 for c in FEATURES:
-    mx = raw[c].max()
-    cts.append(mx+1)
-    print(c,mx+1)
+    if c.startswith('city_id'):
+        cts.append(len(ft_model.wv.index_to_key) + 1)  # FastText modelindeki kelime sayısı + 1
+    else:
+        mx = raw[c].max()
+        cts.append(mx + 1)
 
+# FastText modelinden embedding boyutunu al
+embedding_dim = ft_model.vector_size
 # %%
 # EMBEDDING OUTPUT SIZES
 #EC = 400
-cts2 = [4,3,3,6,2,60,3,14,7,7,200,18,9,3,4]+[EC]*len(cols)
+cts2 = [4,3,3,6,2,60,3,14,7,7,200,18,9,3,4] + [embedding_dim] * len(cols)
 
 # %%
 emb_map = {i:(j,k) for i,j,k in zip(FEATURES, cts, cts2)}
@@ -345,19 +347,17 @@ class WeightedSum(tf.keras.layers.Layer):
 class EmbDotSoftMax(tf.keras.layers.Layer):
     def __init__(self):
         super(EmbDotSoftMax, self).__init__()
-        self.d1 = tf.keras.layers.Dense(EC) 
-    
+
     def call(self, x, top_city_emb, top_city_id, prob):
-        emb_pred = self.d1(x) # B,EC
-        emb_pred = tf.expand_dims(emb_pred, axis=1) #B,1,EC
-        x = emb_pred*top_city_emb #B,N_CITY,EC
-        x = tf.math.reduce_sum(x, axis=2) #B,N_CITY
-        x = tf.nn.softmax(x) #B,N_CITY
-
-        rowids = tf.range(0,tf.shape(x)[0]) # B
-        rowids = tf.transpose(tf.tile([rowids],[N_CITY,1])) # B,N_CITY
-
-        idx = tf.stack([rowids,top_city_id],axis=2) # B, N_CITY, 2
+        emb_pred = x
+        emb_pred = tf.keras.layers.Lambda(lambda x: x[:, :300])(emb_pred)  # Emb_pred boyutunu 300'e düşürmek için
+        emb_pred = tf.expand_dims(emb_pred, axis=1)
+        x = emb_pred * top_city_emb
+        x = tf.math.reduce_sum(x, axis=2)
+        x = tf.nn.softmax(x)
+        rowids = tf.range(0, tf.shape(x)[0])
+        rowids = tf.transpose(tf.tile([rowids], [N_CITY, 1]))
+        idx = tf.stack([rowids, top_city_id], axis=2)
         idx = tf.cast(idx, tf.int32)
         prob = tf.scatter_nd(idx, x, tf.shape(prob)) + 1e-6
         return prob
@@ -366,44 +366,43 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
 def build_model():
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
-    i,j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i,j)
+    i, j = emb_map['city_id_lag1']
+    e_city = tf.keras.layers.Embedding(i, j, weights=[embedding_matrix], trainable=False)
     city_embs = []
-    
-    for k,f in enumerate(FEATURES):
-        i,j = emb_map[f]
+
+    for k, f in enumerate(FEATURES):
+        i, j = emb_map[f]
         if f.startswith('city_id'):
-            city_embs.append(e_city(inp[:,k]))
+            city_embs.append(e_city(inp[:, k]))
         else:
-            e = tf.keras.layers.Embedding(i,j)
-            embs.append(e(inp[:,k]))
-    
-    xc = tf.stack(city_embs, axis=1) # B, T, F
+            e = tf.keras.layers.Embedding(i, j)
+            embs.append(e(inp[:, k]))
+
+    xc = tf.stack(city_embs, axis=1)
     xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
-    #xc, state_h, state_c = tf.keras.layers.LSTM(EC, activation='tanh', return_state=True)(xc)
-    
+
     x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x,xc])
-    
-    x1 = Linear(512+256, 'relu')(x)
-    x2 = Linear(512+256, 'relu')(x1)
-    prob = tf.keras.layers.Dense(t_ct,activation='softmax',name='main_output')(x2)
-    
-    _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
-    top_city_emb = e_city(top_city_id) # B,N_CITY,EC
-    
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
-    
+    x = tf.keras.layers.Concatenate()([x, xc])
+
+    x1 = Linear(512 + 256, 'relu')(x)
+    x2 = Linear(512 + 256, 'relu')(x1)
+    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
+
+    _, top_city_id = tf.math.top_k(prob, N_CITY)
+    top_city_emb = e_city(top_city_id)
+    top_city_emb = tf.expand_dims(top_city_emb, axis=1)
+
+    x1 = Linear(512 + 256, 'relu')(x1)
+    prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+    prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
+
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
-    
-    model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
-    #opt = tf.keras.optimizers.Adam(lr=0.001)
-    opt = tf.keras.optimizers.Nadam(lr=0.001,beta_1=0.9,beta_2=0.999)
+
+    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
+    opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
-    model.compile(loss=loss, optimizer = opt, metrics=[mtr])
+    model.compile(loss=loss, optimizer=opt, metrics=[mtr])
     return model
 
 # %% [markdown]
@@ -495,7 +494,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_Nadam_1204.txt')
+    aum = CustomCallback(filename='accuracy_logs.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -521,11 +520,11 @@ for fold in range(5):
     # plt.title('Accuracy Schedule', size=16)
     
     
-    # # Her bir veri noktasının üzerine tam değeri yazdırma
+    # Her bir veri noktasının üzerine tam değeri yazdırma
     # for i, txt in enumerate(y):
     #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
 
-    # plt.show()
+    #plt.show()
     #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid

@@ -48,6 +48,8 @@ from sklearn.model_selection import GroupKFold
 import wandb
 import random
 import keyboard
+import gensim
+from gensim.models import KeyedVectors
 pd.set_option('display.max_columns', None)
 
 
@@ -55,6 +57,24 @@ pd.__version__, cudf.__version__
 
 # %% [markdown]
 # # Metric Calculation
+
+
+# Word2Vec modelini yükleyin (önceden eğitilmiş bir model kullanıyoruz)
+word2vec_model_path = '00_Data/word2vec-model.pkl'
+word2vec_model = KeyedVectors.load(word2vec_model_path)
+
+
+# Embedding matrisi oluşturma
+embedding_dim = 300  # Word2Vec modelinin vektör boyutu
+vocab_size = len(word2vec_model.index_to_key)
+
+# Embedding matrisi (vocab_size, embedding_dim) boyutunda olacak
+embedding_matrix = np.zeros((vocab_size, embedding_dim))
+
+for i, word in enumerate(word2vec_model.index_to_key):
+    embedding_vector = word2vec_model[word]
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
 
 # %%
 # Return top4 metric
@@ -270,6 +290,16 @@ os.environ['TF_MEMORY_ALLOCATION'] = "0.7" # fraction of free memory
 import tensorflow as tf
 tf.__version__
 
+
+# Word2Vec embeddinglerini kullanan Embedding katmanını oluşturma
+embedding_layer = tf.keras.layers.Embedding(
+    input_dim=vocab_size,
+    output_dim=embedding_dim,
+    weights=[embedding_matrix],
+    input_length=len(FEATURES),
+    trainable=False  # Pretrained embeddinglerin eğitilmemesi için
+)
+
 # %%
 gpus = tf.config.list_physical_devices('GPU')
 gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafıza hatası almamak için ekledim 0410
@@ -329,35 +359,33 @@ class WeightedSum(tf.keras.layers.Layer):
         super(WeightedSum, self).__init__(name='weighted_sum')
 
     def build(self, input_shape):
-        self.w1 = self.add_weight(name='w1',shape=None,dtype=tf.float32,
-                                 trainable=True)
-        self.w2 = self.add_weight(name='w2',shape=None,dtype=tf.float32,
-                                 trainable=True)
-        
+        self.w1 = self.add_weight(name='w1', shape=None, dtype=tf.float32, trainable=True)
+        self.w2 = self.add_weight(name='w2', shape=None, dtype=tf.float32, trainable=True)
+
     def call(self, x1, x2, x3):
         w1 = tf.nn.sigmoid(self.w1)
         w2 = tf.nn.sigmoid(self.w2)
         x1 = tf.stop_gradient(x1)
         x2 = tf.stop_gradient(x2)
         x3 = tf.stop_gradient(x3)
-        return (x1 + x2*w1 + x3*w2)/(1+w1+w2)
+        return (x1 + x2 * w1 + x3 * w2) / (1 + w1 + w2)
     
 class EmbDotSoftMax(tf.keras.layers.Layer):
     def __init__(self):
         super(EmbDotSoftMax, self).__init__()
-        self.d1 = tf.keras.layers.Dense(EC) 
-    
+        self.d1 = tf.keras.layers.Dense(embedding_dim)
+
     def call(self, x, top_city_emb, top_city_id, prob):
-        emb_pred = self.d1(x) # B,EC
-        emb_pred = tf.expand_dims(emb_pred, axis=1) #B,1,EC
-        x = emb_pred*top_city_emb #B,N_CITY,EC
-        x = tf.math.reduce_sum(x, axis=2) #B,N_CITY
-        x = tf.nn.softmax(x) #B,N_CITY
+        emb_pred = self.d1(x)  # B, embedding_dim
+        emb_pred = tf.expand_dims(emb_pred, axis=1)  # B, 1, embedding_dim
+        x = emb_pred * top_city_emb  # B, N_CITY, embedding_dim
+        x = tf.math.reduce_sum(x, axis=2)  # B, N_CITY
+        x = tf.nn.softmax(x)  # B, N_CITY
 
-        rowids = tf.range(0,tf.shape(x)[0]) # B
-        rowids = tf.transpose(tf.tile([rowids],[N_CITY,1])) # B,N_CITY
+        rowids = tf.range(0, tf.shape(x)[0])  # B
+        rowids = tf.transpose(tf.tile([rowids], [N_CITY, 1]))  # B, N_CITY
 
-        idx = tf.stack([rowids,top_city_id],axis=2) # B, N_CITY, 2
+        idx = tf.stack([rowids, top_city_id], axis=2)  # B, N_CITY, 2
         idx = tf.cast(idx, tf.int32)
         prob = tf.scatter_nd(idx, x, tf.shape(prob)) + 1e-6
         return prob
@@ -366,44 +394,42 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
 def build_model():
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
-    i,j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i,j)
+    i, j = emb_map['city_id_lag1']
+    e_city = embedding_layer
     city_embs = []
-    
-    for k,f in enumerate(FEATURES):
-        i,j = emb_map[f]
+
+    for k, f in enumerate(FEATURES):
+        i, j = emb_map[f]
         if f.startswith('city_id'):
-            city_embs.append(e_city(inp[:,k]))
+            city_embs.append(e_city(inp[:, k]))
         else:
-            e = tf.keras.layers.Embedding(i,j)
-            embs.append(e(inp[:,k]))
-    
-    xc = tf.stack(city_embs, axis=1) # B, T, F
-    xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
-    #xc, state_h, state_c = tf.keras.layers.LSTM(EC, activation='tanh', return_state=True)(xc)
-    
+            e = tf.keras.layers.Embedding(i, j)
+            embs.append(e(inp[:, k]))
+
+    xc = tf.stack(city_embs, axis=1)  # B, T, F
+    xc = tf.keras.layers.GRU(embedding_dim, activation='tanh')(xc)
+
     x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x,xc])
-    
-    x1 = Linear(512+256, 'relu')(x)
-    x2 = Linear(512+256, 'relu')(x1)
-    prob = tf.keras.layers.Dense(t_ct,activation='softmax',name='main_output')(x2)
-    
+    x = tf.keras.layers.Concatenate()([x, xc])
+
+    x1 = Linear(512 + 256, 'relu')(x)
+    x2 = Linear(512 + 256, 'relu')(x1)
+    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
+
     _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
-    top_city_emb = e_city(top_city_id) # B,N_CITY,EC
-    
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
-    
+    top_city_emb = e_city(top_city_id)  # B,N_CITY,embedding_dim
+
+    x1 = Linear(512 + 256, 'relu')(x1)
+    prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+    prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
+
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
-    
-    model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
-    #opt = tf.keras.optimizers.Adam(lr=0.001)
-    opt = tf.keras.optimizers.Nadam(lr=0.001,beta_1=0.9,beta_2=0.999)
+
+    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
+    opt = tf.keras.optimizers.Adam(learning_rate=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
-    model.compile(loss=loss, optimizer = opt, metrics=[mtr])
+    model.compile(loss=loss, optimizer=opt, metrics=[mtr])
     return model
 
 # %% [markdown]
@@ -495,7 +521,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_Nadam_1204.txt')
+    aum = CustomCallback(filename='accuracy_logs_1505_Word2Vec.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -521,11 +547,11 @@ for fold in range(5):
     # plt.title('Accuracy Schedule', size=16)
     
     
-    # # Her bir veri noktasının üzerine tam değeri yazdırma
+    # Her bir veri noktasının üzerine tam değeri yazdırma
     # for i, txt in enumerate(y):
     #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
 
-    # plt.show()
+    #plt.show()
     #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid

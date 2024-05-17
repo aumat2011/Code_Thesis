@@ -264,7 +264,7 @@ cols
 # # GRU-MS-SMF 5 Fold Model
 
 # %%
-os.environ['TF_MEMORY_ALLOCATION'] = "0.9" # fraction of free memory
+os.environ['TF_MEMORY_ALLOCATION'] = "0.7" # fraction of free memory
 
 # %%
 import tensorflow as tf
@@ -272,11 +272,11 @@ tf.__version__
 
 # %%
 gpus = tf.config.list_physical_devices('GPU')
-gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.8) #hafıza hatası almamak için ekledim 0410
+gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafıza hatası almamak için ekledim 0410
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*19)]
 )
 
 # %% [markdown]
@@ -491,7 +491,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs.txt')
+    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_Adam_1104.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})

@@ -276,7 +276,7 @@ gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #haf�
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*19)]
 )
 
 # %% [markdown]
@@ -494,7 +494,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs.txt')
+    aum = CustomCallback(filename='Conclusion_accuracy_logs_LSTM_Adam_1104.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -505,26 +505,26 @@ for fold in range(5):
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
     
-    rng = [i for i in range(5)]
-    y = [validation_scores[x] for x in rng]
+    # rng = [i for i in range(5)]
+    # y = [validation_scores[x] for x in rng]
 
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
 
-    ax.plot(rng, y, '-o')
-    # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
-    plt.xticks(rng, [f'{val:.1f}' for val in rng])
+    # ax.plot(rng, y, '-o')
+    # # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
+    # plt.xticks(rng, [f'{val:.1f}' for val in rng])
     
-    plt.grid()
-    plt.xlabel('epoch', size=14)
-    plt.ylabel('Accuracy', size=14)
-    plt.title('Accuracy Schedule', size=16)
+    # plt.grid()
+    # plt.xlabel('epoch', size=14)
+    # plt.ylabel('Accuracy', size=14)
+    # plt.title('Accuracy Schedule', size=16)
     
     
     # Her bir veri noktasının üzerine tam değeri yazdırma
-    for i, txt in enumerate(y):
-        ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
+    # for i, txt in enumerate(y):
+    #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
 
-    plt.show()
+    # plt.show()
     #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid
