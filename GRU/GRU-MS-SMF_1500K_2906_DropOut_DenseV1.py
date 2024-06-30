@@ -108,7 +108,7 @@ def top4_metric( val, istest=0, pos=0 , target='city_id'):
 #%%time
 PATH = './'
 #raw = cudf.read_csv('../../00_Data/train_and_test_2.csv')
-raw = cudf.read_csv('00_Data/train_and_test_2_1M.csv')
+raw = cudf.read_csv('00_Data/train_and_test_2.csv')
 print(raw.shape)
 
 # %%
@@ -279,7 +279,7 @@ gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafÄ
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*19)]
 )
 
 # %% [markdown]
@@ -504,7 +504,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_GRU_1M_DropOut_DenseV1.txt')
+    aum = CustomCallback(filename='accuracy_logs_GRU_1500K_DropOut_DenseV2.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})

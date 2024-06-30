@@ -49,6 +49,8 @@ from sklearn.model_selection import GroupKFold
 import wandb
 import random
 import keyboard
+from keras.layers import Input, Embedding, GRU, Dense, Concatenate, BatchNormalization, Dropout
+from keras.models import Model
 pd.set_option('display.max_columns', None)
 
 
@@ -277,7 +279,7 @@ gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #haf�
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
-    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*20)]
+    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024*19)]
 )
 
 # %% [markdown]
@@ -364,11 +366,11 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
         return prob
     
 
-def build_model(l2_reg_alpha=0.00000001):
-    inp = tf.keras.layers.Input(shape=(len(FEATURES),))
+def build_model():
+    inp = Input(shape=(len(FEATURES),))
     embs = []
     i, j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i, j)
+    e_city = Embedding(i, j)
     city_embs = []
 
     for k, f in enumerate(FEATURES):
@@ -376,32 +378,37 @@ def build_model(l2_reg_alpha=0.00000001):
         if f.startswith('city_id'):
             city_embs.append(e_city(inp[:, k]))
         else:
-            e = tf.keras.layers.Embedding(i, j)
+            e = Embedding(i, j)
             embs.append(e(inp[:, k]))
 
     xc = tf.stack(city_embs, axis=1)  # B, T, F
-    xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
+    xc = GRU(EC, activation='tanh')(xc)
 
-    x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x, xc])
+    x = Concatenate()(embs)
+    x = Concatenate()([x, xc])
 
-    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x)
-    x2 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x1)
+    x = Dense(512+256, activation='relu')(x)
+    x = BatchNormalization()(x)
+    x = Dropout(0.00001)(x)
 
-    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
+    x = Dense(512+256, activation='relu')(x)
+    x = BatchNormalization()(x)
+    x = Dropout(0.00001)(x)
 
-    _, top_city_id = tf.math.top_k(prob, N_CITY)
-    top_city_emb = e_city(top_city_id)
+    prob = Dense(t_ct, activation='softmax', name='main_output')(x)
 
-    x1 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x1)
-    prob_1 = EmbDotSoftMax()(x1, top_city_emb, top_city_id, prob)
+    _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
+    top_city_emb = e_city(top_city_id)  # B,N_CITY,EC
 
-    x2 = tf.keras.layers.Dense(512 + 256, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(l2_reg_alpha))(x2)
-    prob_2 = EmbDotSoftMax()(x2, top_city_emb, top_city_id, prob)
+    x = Dense(512+256, activation='relu')(x)
+    prob_1 = EmbDotSoftMax()(x, top_city_emb, top_city_id, prob)
+    
+    x = Dense(512+256, activation='relu')(x)
+    prob_2 = EmbDotSoftMax()(x, top_city_emb, top_city_id, prob)
 
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
 
-    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
+    model = Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
     opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
@@ -497,7 +504,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_GRU_1M_L2V22.txt')
+    aum = CustomCallback(filename='accuracy_logs_GRU_1M_DropOut_DenseV22.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -508,19 +515,19 @@ for fold in range(5):
           epochs=5 #epochs=5
           ,verbose=1,batch_size=512, callbacks=[sv,lr,aum])
     
-    rng = [i for i in range(5)]
-    y = [validation_scores[x] for x in rng]
+    # rng = [i for i in range(5)]
+    # y = [validation_scores[x] for x in rng]
 
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
 
-    ax.plot(rng, y, '-o')
-    # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
-    plt.xticks(rng, [f'{val:.1f}' for val in rng])
+    # ax.plot(rng, y, '-o')
+    # # x ekseni değerlerini 1.0 hassasiyetinde ayarlama
+    # plt.xticks(rng, [f'{val:.1f}' for val in rng])
     
-    plt.grid()
-    plt.xlabel('epoch', size=14)
-    plt.ylabel('Accuracy', size=14)
-    plt.title('Accuracy Schedule', size=16)
+    # plt.grid()
+    # plt.xlabel('epoch', size=14)
+    # plt.ylabel('Accuracy', size=14)
+    # plt.title('Accuracy Schedule', size=16)
     
     
     # Her bir veri noktasının üzerine tam değeri yazdırma

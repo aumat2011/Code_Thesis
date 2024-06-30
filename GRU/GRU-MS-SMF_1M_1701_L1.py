@@ -497,7 +497,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='accuracy_logs_GRU_1M_L1.txt')
+    aum = CustomCallback(filename='accuracy_logs_GRU_1M_L1V22.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
@@ -524,10 +524,10 @@ for fold in range(5):
     
     
     # Her bir veri noktasının üzerine tam değeri yazdırma
-    for i, txt in enumerate(y):
-        ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
+    # for i, txt in enumerate(y):
+    #     ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
 
-    plt.show()
+    # plt.show()
     #wandb.log({"Accuracy": validation_score[8]})
     
     del train, valid
