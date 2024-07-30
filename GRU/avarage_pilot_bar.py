@@ -3,7 +3,7 @@ import os, sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-#rates = [0.5664, 0.5664, 0.5684, 0.5667, 0.5626] #OVERALL GRU SCORES - BEST FOR EACH FOLD   
+rates = [0.5664, 0.5664, 0.5684, 0.5667, 0.5626] #OVERALL GRU SCORES - BEST FOR EACH FOLD   
 #rates = [0.5671, 0.5657, 0.5673, 0.5662, 0.5626] #OVERALL LSTM0901 SCORES - BEST FOR EACH FOLD
 #rates = [0.5668, 0.5650, 0.5660, 0.5674, 0.5637] #OVERALL LSTM1001 SCORES - BEST FOR EACH FOLD 
 #rates = [0.5495, 0.5495, 0.5508, 0.5490, 0.5430] #OVERALL L2 1M - BEST FOR EACH FOLD
@@ -44,36 +44,39 @@ import numpy as np
 #rates = [0.5708, 0.5677, 0.5686,0.5691,0.5623] #OVERALL MODEL DIMENSION 1000 20240721
 #rates = [0.5693, 0.5680, 0.5682,0.5683,0.5638] #OVERALL BEST NADAM DIMENSION 800 1500K 20240721
 #rates = [0.6653, 0.6675, 0.6671,0.6663,0.6610] #OVERALL BEST NADAM DIMENSION 800 1M 20240721
-rates = [0.5702, 0.5671, 0.5691,0.5673,0.5630] #OVERALL CITY EMBEDDING DENSE LAYER 800 DIMENSION- 20240721
+#rates = [0.5702, 0.5671, 0.5691,0.5673,0.5630] #OVERALL CITY EMBEDDING DENSE LAYER 800 DIMENSION- 20240721
 
 
-def lrfn(epoch):
-    return rates[epoch]
+# def lrfn(epoch):
+#     return rates[epoch]
 
 avg = sum(rates) / len(rates)
-
 avgS = [avg, avg, avg, avg, avg]
-
 rng = [i for i in range(5)]
-y = [lrfn(x) for x in rng]
+y = rates
 
 fig, ax = plt.subplots()
-ax.plot(rng, y, '-o', label='Epoch Rates')
+ax.bar(rng, y, label='Epoch Rates')
 
-# Plot the average line
-plt.plot(rng, avgS, '-o', label='Average')
+# Plot the average line across the whole plot
+plt.axhline(y=avg, color='red', linestyle='-', linewidth=2, label='Average')
 
-# Add data labels for each point in the "Epoch Rates" line
+# Add data labels for each bar in the "Epoch Rates" line
 for i, txt in enumerate(y):
-    ax.text(rng[i], txt, f'{txt:.4f}', ha='right', va='bottom')
+    ax.text(rng[i], txt, f'{txt:.4f}', ha='center', va='bottom', fontsize=10)
 
-# Add data label for the last point in the "Average" line
-ax.text(rng[-1], avgS[-1], f'{avgS[-1]:.4f}', ha='right', va='bottom')
+# Add data label for the average line above the line
+ax.text(len(rng) - 0, avg + 0.005, 'Avg : ' f'{avg:.4f}', ha='right', va='top', fontsize=12, color='red', fontweight='bold')
+
+# Increase the sensitivity of the y-axis
+plt.ylim(0.530, 0.575)
 
 plt.xticks(rng, [f'{val:.1f}' for val in rng])
-plt.grid()
+plt.grid(axis='y')
 plt.xlabel('Fold', size=14)
 plt.ylabel('Accuracy Rate', size=14)
-#plt.title('Overall Success Rate FastText Embedding', size=16)
-plt.legend()
+
+# Move legend to the bottom right of the plot
+ax.legend(loc='upper center', bbox_to_anchor=(0.15, -0.15), ncol=2, fontsize=12)
+
 plt.show()

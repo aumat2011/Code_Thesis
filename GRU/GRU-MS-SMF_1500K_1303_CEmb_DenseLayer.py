@@ -191,7 +191,7 @@ for c in CATS:
 
 # %%
 LAGS = 5
-EC = 600
+EC = 800
 
 # ENGINEER LAG FEATURES
 for i in range(1,LAGS+1):
@@ -497,7 +497,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='Conclusion_accuracy_logs_Dimension_DenseLayer_CEmb_1204.txt')
+    aum = CustomCallback(filename='20240721_accuracy_logs_GRU_City_Embedding_Dense_Layer_800_Dim.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})

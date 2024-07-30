@@ -272,7 +272,7 @@ tf.__version__
 
 # %%
 gpus = tf.config.list_physical_devices('GPU')
-gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.7) #hafıza hatası almamak için ekledim 0410
+gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.6) #hafıza hatası almamak için ekledim 0410
 # %%
 tf.config.experimental.set_virtual_device_configuration(
     gpus[0],
@@ -495,7 +495,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='Conclusion_accuracy_logs_GRU_Nadam_1204.txt')
+    aum = CustomCallback(filename='20240720_accuracy_logs_GRU_Nadam_Orj.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
