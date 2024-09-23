@@ -308,6 +308,7 @@ t_ct
 # # Build Model
 
 # %%
+
 N_CITY = 50
 
 class Linear(tf.keras.layers.Layer):
@@ -329,10 +330,8 @@ class WeightedSum(tf.keras.layers.Layer):
         super(WeightedSum, self).__init__(name='weighted_sum')
 
     def build(self, input_shape):
-        self.w1 = self.add_weight(name='w1',shape=None,dtype=tf.float32,
-                                 trainable=True)
-        self.w2 = self.add_weight(name='w2',shape=None,dtype=tf.float32,
-                                 trainable=True)
+        self.w1 = self.add_weight(name='w1', shape=None, dtype=tf.float32, trainable=True)
+        self.w2 = self.add_weight(name='w2', shape=None, dtype=tf.float32, trainable=True)
         
     def call(self, x1, x2, x3):
         w1 = tf.nn.sigmoid(self.w1)
@@ -340,24 +339,25 @@ class WeightedSum(tf.keras.layers.Layer):
         x1 = tf.stop_gradient(x1)
         x2 = tf.stop_gradient(x2)
         x3 = tf.stop_gradient(x3)
-        return (x1 + x2*w1 + x3*w2)/(1+w1+w2)
+        return (x1 + x2 * w1 + x3 * w2) / (1 + w1 + w2)
     
 class EmbDotSoftMax(tf.keras.layers.Layer):
     def __init__(self):
         super(EmbDotSoftMax, self).__init__()
         self.d1 = tf.keras.layers.Dense(EC) 
     
-    def call(self, x, top_city_emb, top_city_id, prob):
-        emb_pred = self.d1(x) # B,EC
-        emb_pred = tf.expand_dims(emb_pred, axis=1) #B,1,EC
-        x = emb_pred*top_city_emb #B,N_CITY,EC
-        x = tf.math.reduce_sum(x, axis=2) #B,N_CITY
-        x = tf.nn.softmax(x) #B,N_CITY
+    def call(self, x, top_city_id, prob):
+        emb_pred = self.d1(x)  # B, EC
+        emb_pred = tf.expand_dims(emb_pred, axis=1)  # B, 1, EC
+        emb_pred = tf.tile(emb_pred, [1, N_CITY, 1])  # B, N_CITY, EC
+        x = tf.math.reduce_sum(emb_pred, axis=2)  # B, N_CITY
+        x = tf.nn.softmax(x)  # B, N_CITY
 
-        rowids = tf.range(0,tf.shape(x)[0]) # B
-        rowids = tf.transpose(tf.tile([rowids],[N_CITY,1])) # B,N_CITY
+        rowids = tf.range(0, tf.shape(x)[0])  # B
+        rowids = tf.expand_dims(rowids, axis=1)  # B, 1
+        rowids = tf.tile(rowids, [1, N_CITY])  # B, N_CITY
 
-        idx = tf.stack([rowids,top_city_id],axis=2) # B, N_CITY, 2
+        idx = tf.stack([rowids, top_city_id], axis=2)  # B, N_CITY, 2
         idx = tf.cast(idx, tf.int32)
         prob = tf.scatter_nd(idx, x, tf.shape(prob)) + 1e-6
         return prob
@@ -366,43 +366,41 @@ class EmbDotSoftMax(tf.keras.layers.Layer):
 def build_model():
     inp = tf.keras.layers.Input(shape=(len(FEATURES),))
     embs = []
-    i,j = emb_map['city_id_lag1']
-    e_city = tf.keras.layers.Embedding(i,j)
+    i, j = emb_map['city_id_lag1']
+    e_city = tf.keras.layers.Embedding(i, j)
     city_embs = []
     
-    for k,f in enumerate(FEATURES):
-        i,j = emb_map[f]
+    for k, f in enumerate(FEATURES):
+        i, j = emb_map[f]
         if f.startswith('city_id'):
-            city_embs.append(e_city(inp[:,k]))
+            city_embs.append(e_city(inp[:, k]))
         else:
-            e = tf.keras.layers.Embedding(i,j)
-            embs.append(e(inp[:,k]))
+            e = tf.keras.layers.Embedding(i, j)
+            embs.append(e(inp[:, k]))
     
-    xc = tf.stack(city_embs, axis=1) # B, T, F
+    xc = tf.stack(city_embs, axis=1)  # B, T, F
     xc = tf.keras.layers.GRU(EC, activation='tanh')(xc)
-    #xc, state_h, state_c = tf.keras.layers.LSTM(EC, activation='tanh', return_state=True)(xc)
     
     x = tf.keras.layers.Concatenate()(embs)
-    x = tf.keras.layers.Concatenate()([x,xc])
+    x = tf.keras.layers.Concatenate()([x, xc])
     
-    x1 = Linear(512+256, 'relu')(x)
-    x2 = Linear(512+256, 'relu')(x1)
-    prob = tf.keras.layers.Dense(t_ct,activation='softmax',name='main_output')(x2)
+    x1 = Linear(512 + 256, 'relu')(x)
+    x2 = Linear(512 + 256, 'relu')(x1)
+    prob = tf.keras.layers.Dense(t_ct, activation='softmax', name='main_output')(x2)
     
-    _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B,N_CITY
-    top_city_emb = e_city(top_city_id) # B,N_CITY,EC
+    _, top_city_id = tf.math.top_k(prob, N_CITY)  # top_city_id.shape = B, N_CITY
 
-    x1 = Linear(512+256, 'relu')(x1)
-    prob_1 = EmbDotSoftMax()(x1,top_city_emb,top_city_id,prob)
-    prob_2 = EmbDotSoftMax()(x2,top_city_emb,top_city_id,prob)
+    x1 = Linear(512 + 256, 'relu')(x1)
+    prob_1 = EmbDotSoftMax()(x1, top_city_id, prob)  # top_city_emb çıkarıldı
+    prob_2 = EmbDotSoftMax()(x2, top_city_id, prob)  # top_city_emb çıkarıldı
     
     prob_ws = WeightedSum()(prob, prob_1, prob_2)
     
-    model = tf.keras.models.Model(inputs=inp,outputs=[prob,prob_1,prob_2,prob_ws])
+    model = tf.keras.models.Model(inputs=inp, outputs=[prob, prob_1, prob_2, prob_ws])
     opt = tf.keras.optimizers.Adam(lr=0.001)
     loss = tf.keras.losses.SparseCategoricalCrossentropy()
     mtr = tf.keras.metrics.SparseTopKCategoricalAccuracy(k=4)
-    model.compile(loss=loss, optimizer = opt, metrics=[mtr])
+    model.compile(loss=loss, optimizer=opt, metrics=[mtr])
     return model
 
 # %% [markdown]
@@ -494,7 +492,7 @@ for fold in range(5):
             with open(self.filename, 'a') as file:
                 file.write(log_string)
             
-    aum = CustomCallback(filename='20240720_accuracy_logs_GRU_ORJ.txt')
+    aum = CustomCallback(filename='20240922_accuracy_logs_GRU_ORJ_Without_CİtyEmb.txt')
 
     # wandb.init()
     # wandb.log({"Accuracy": (sv.monitor)})
