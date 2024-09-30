@@ -1,0 +1,129 @@
+###################################################
+Epoch 1/5 - 
+Loss: 20.5643 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5332
+Nihai Doğruluk (Top-4): 0.5331750512123108Nihai NDCG: 6.14607824900304e-06###################################################
+###################################################
+Epoch 2/5 - 
+Loss: 16.6195 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5499
+Nihai Doğruluk (Top-4): 0.5499354600906372Nihai NDCG: 6.119044883234892e-06###################################################
+###################################################
+Epoch 3/5 - 
+Loss: 15.0088 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5617
+Nihai Doğruluk (Top-4): 0.5617161393165588Nihai NDCG: 6.023895366524812e-06###################################################
+###################################################
+Epoch 4/5 - 
+Loss: 14.5854 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5619
+Nihai Doğruluk (Top-4): 0.56194669008255Nihai NDCG: 5.990757472318364e-06###################################################
+###################################################
+Epoch 5/5 - 
+Loss: 14.5381 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5621
+Nihai Doğruluk (Top-4): 0.5621311068534851Nihai NDCG: 5.985345978842815e-06###################################################
+###################################################
+Epoch 1/5 - 
+Loss: 20.5025 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5325
+Nihai Doğruluk (Top-4): 0.5324501991271973Nihai NDCG: 6.220093837328022e-06###################################################
+###################################################
+Epoch 2/5 - 
+Loss: 16.6098 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5496
+Nihai Doğruluk (Top-4): 0.5495679974555969Nihai NDCG: 6.029782070982037e-06###################################################
+###################################################
+Epoch 3/5 - 
+Loss: 14.9881 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5609
+Nihai Doğruluk (Top-4): 0.5609261393547058Nihai NDCG: 5.9788649195979815e-06###################################################
+###################################################
+Epoch 4/5 - 
+Loss: 14.5640 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5610
+Nihai Doğruluk (Top-4): 0.5610182881355286Nihai NDCG: 5.942951702309074e-06###################################################
+###################################################
+Epoch 5/5 - 
+Loss: 14.5173 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5609
+Nihai Doğruluk (Top-4): 0.5609031319618225Nihai NDCG: 5.944908480159938e-06###################################################
+###################################################
+Epoch 1/5 - 
+Loss: 20.5113 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5350
+Nihai Doğruluk (Top-4): 0.5349726676940918Nihai NDCG: 6.128692803031299e-06###################################################
+###################################################
+Epoch 2/5 - 
+Loss: 16.5652 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5492
+Nihai Doğruluk (Top-4): 0.5491563677787781Nihai NDCG: 6.2325534599949606e-06###################################################
+###################################################
+Epoch 3/5 - 
+Loss: 14.9352 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5609
+Nihai Doğruluk (Top-4): 0.5609298348426819Nihai NDCG: 5.955340839136625e-06###################################################
+###################################################
+Epoch 4/5 - 
+Loss: 14.5033 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5613
+Nihai Doğruluk (Top-4): 0.5612542629241943Nihai NDCG: 5.9942776715615764e-06###################################################
+###################################################
+Epoch 5/5 - 
+Loss: 14.4560 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5612
+Nihai Doğruluk (Top-4): 0.5612311363220215Nihai NDCG: 5.99391523792292e-06###################################################
+###################################################
+Epoch 1/5 - 
+Loss: 20.5528 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5308
+Nihai Doğruluk (Top-4): 0.5307723879814148Nihai NDCG: 6.167866558826063e-06###################################################
+###################################################
+Epoch 2/5 - 
+Loss: 16.6569 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5489
+Nihai Doğruluk (Top-4): 0.5489320755004883Nihai NDCG: 6.068961738492362e-06###################################################
+###################################################
+Epoch 3/5 - 
+Loss: 15.0585 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5616
+Nihai Doğruluk (Top-4): 0.5615678429603577Nihai NDCG: 6.050520369171863e-06###################################################
+###################################################
+Epoch 4/5 - 
+Loss: 14.6392 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5620
+Nihai Doğruluk (Top-4): 0.5619821548461914Nihai NDCG: 6.02506906943745e-06###################################################
+###################################################
+Epoch 5/5 - 
+Loss: 14.5938 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5617
+Nihai Doğruluk (Top-4): 0.5617289543151855Nihai NDCG: 6.020090950187296e-06###################################################
+###################################################
+Epoch 1/5 - 
+Loss: 20.5643 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5268
+Nihai Doğruluk (Top-4): 0.5268138647079468Nihai NDCG: 5.967372089799028e-06###################################################
+###################################################
+Epoch 2/5 - 
+Loss: 16.6246 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5455
+Nihai Doğruluk (Top-4): 0.5454880595207214Nihai NDCG: 6.019840384396957e-06###################################################
+###################################################
+Epoch 3/5 - 
+Loss: 15.0029 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5555
+Nihai Doğruluk (Top-4): 0.55552738904953Nihai NDCG: 5.862393663846888e-06###################################################
+###################################################
+Epoch 4/5 - 
+Loss: 14.5774 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5556
+Nihai Doğruluk (Top-4): 0.5556195378303528Nihai NDCG: 5.836318905494409e-06###################################################
+###################################################
+Epoch 5/5 - 
+Loss: 14.5308 - 
+val_weighted_sum_sparse_top_k_categorical_accuracy: 0.5558
+Nihai Doğruluk (Top-4): 0.5558037161827087Nihai NDCG: 5.834720923303394e-06###################################################
+Eğitim tamamlandı!
+Nihai Kayıp: 14.530786514282227
+Nihai Doğruluk (Top-4): 0.5558037161827087
+Nihai NDCG: 5.834720923303394e-06
