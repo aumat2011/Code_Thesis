@@ -1,0 +1,12 @@
+The structure of this study is organized as follows: 
+
+	Within the GRU folder, there are experiments conducted using the GRU algorithm, 
+	LSTM folder , there are experiments conducted using the LSTM algorithm,
+        Results folder includes results of the each experiments.
+
+Each experiment saved as a separate .py file. Thus, each .py file contains only minor modifications from the others. 
+The names of these .py files indicate the specific experiments they contain, with numbers in the filenames representing the sequence of the experiments. 
+
+The original code for this study is located under the GRU folder "GRU-MS-SMF_1500K_0601_Adam_Image.py" 
+
+As a result of the experiments, .txt files prefixed with accuracy_logs have been generated, storing values obtained for each epoch and fold.
