@@ -10,3 +10,4 @@ The names of these .py files indicate the specific experiments they contain, wit
 The original code for this study is located under the GRU folder "GRU-MS-SMF_1500K_0601_Adam_Image.py" 
 
 As a result of the experiments, .txt files prefixed with accuracy_logs have been generated, storing values obtained for each epoch and fold.
+The dataset can be found in https://github.com/bookingcom/ml-dataset-mdt
